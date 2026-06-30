@@ -158,6 +158,7 @@
   <button onclick="showTab('today')">Today</button>
   <button onclick="showTab('groups')">Groups</button>
   <button onclick="showTab('schedule')">Schedule</button>
+  <button onclick="showTab('team')">Follow a Team</button>
 </nav>
 
 <div class="main" id="main-content">
@@ -208,6 +209,7 @@ let byRound = {};   // slug → [events]
 let allEvents = [];
 let standings = [];
 let currentTab = 'bracket';
+let selectedTeam = '';
 
 // ── FLAGS (flagcdn.com images — more reliable than emoji) ────────────────────
 const ISO2 = {
@@ -409,7 +411,7 @@ async function loadAll() {
 // ── TABS ─────────────────────────────────────────────────────────────────────
 function showTab(tab) {
   currentTab = tab;
-  document.querySelectorAll('nav button').forEach((b,i)=>b.classList.toggle('active',['bracket','today','groups','schedule'][i]===tab));
+  document.querySelectorAll('nav button').forEach((b,i)=>b.classList.toggle('active',['bracket','today','groups','schedule','team'][i]===tab));
   renderTab();
 }
 function renderTab() {
@@ -417,6 +419,7 @@ function renderTab() {
   if (currentTab === 'today') renderToday(el);
   else if (currentTab === 'bracket') renderBracket(el);
   else if (currentTab === 'groups') renderGroups(el);
+  else if (currentTab === 'team') renderTeamTab(el);
   else renderSchedule(el);
 }
 
@@ -496,6 +499,54 @@ function renderSchedule(el) {
     html += `<div class="scoreboard-grid">${evts.map(matchCardHTML).join('')}</div>`;
   }
   el.innerHTML = html || '<div class="empty-msg">No schedule available</div>';
+}
+
+// ── FOLLOW A TEAM ────────────────────────────────────────────────────────────
+function getAllTeamNames() {
+  const names = new Set();
+  for (const e of allEvents) {
+    for (const c of (e.competitions?.[0]?.competitors || [])) {
+      const n = c.team?.displayName;
+      const abbr = c.team?.abbreviation || '';
+      if (n && !isPlaceholder(abbr)) names.add(n);
+    }
+  }
+  return [...names].sort();
+}
+
+function onTeamSelect(name) {
+  selectedTeam = name;
+  renderTeamTab(document.getElementById('main-content'));
+}
+
+function renderTeamTab(el) {
+  const teams = getAllTeamNames();
+  let html = `<div style="margin-bottom:18px">
+    <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px">Choose a team</label>
+    <select id="team-select" onchange="onTeamSelect(this.value)" style="width:100%;max-width:320px;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px">
+      <option value="">— Select a team —</option>
+      ${teams.map(t => `<option value="${t}"${t===selectedTeam?' selected':''}>${t}</option>`).join('')}
+    </select>
+  </div>`;
+
+  if (!selectedTeam) {
+    html += `<div class="empty-msg">Pick a team above to see all their games — group stage and bracket</div>`;
+    el.innerHTML = html;
+    return;
+  }
+
+  const games = allEvents
+    .filter(e => (e.competitions?.[0]?.competitors || []).some(c => c.team?.displayName === selectedTeam))
+    .sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  if (!games.length) {
+    html += `<div class="empty-msg">No games found for ${selectedTeam}</div>`;
+    el.innerHTML = html;
+    return;
+  }
+
+  html += `<div class="scoreboard-grid">${games.map(matchCardHTML).join('')}</div>`;
+  el.innerHTML = html;
 }
 
 // ── BRACKET ──────────────────────────────────────────────────────────────────
@@ -729,7 +780,9 @@ async function openMatch(id) {
         }
       }
     }
-    document.getElementById('panel-info').innerHTML = info || '<div style="color:var(--muted);font-size:13px;padding-top:8px">No details yet</div>';
+    if (!info) info = '<div style="color:var(--muted);font-size:13px;padding-top:8px">No details yet</div>';
+    info += `<div style="margin-top:14px;text-align:center"><a href="https://www.espn.com/soccer/match/_/gameId/${id}" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);text-decoration:none">View full match detail on ESPN →</a></div>`;
+    document.getElementById('panel-info').innerHTML = info;
   } catch(err) {
     document.getElementById('panel-info').innerHTML = `<div class="error-msg">Could not load match details: ${err.message}</div>`;
   }
