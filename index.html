@@ -243,52 +243,52 @@ function isPlaceholder(name) {
 
 const BRACKET_LEFT = {
   r32: [
-    // Group A → R16[0] (top of left)
+    // → R16[0]: Morocco vs Canada
     ['Canada','South Africa'],
     ['Morocco','Netherlands'],
-    // Group B → R16[1]
+    // → R16[1]: Ecuador/Mexico winner vs Paraguay
+    ['Ecuador','Mexico'],
     ['Paraguay','Germany'],
-    ['Norway','Ivory Coast'],
-    // Group C → R16[2]
+    // → R16[2]: Austria/Spain winner vs Croatia/Portugal winner
     ['Austria','Spain'],
     ['Croatia','Portugal'],
-    // Group D → R16[3] (bottom of left)
+    // → R16[3]: Bosnia/USA winner vs Congo/England winner
     ['Bosnia-Herzegovina','United States'],
-    ['Senegal','Belgium'],
+    ['Congo DR','England'],
   ],
   r16: [
-    ['Morocco','Canada'],          // known: Morocco won R32-4, Canada won R32-1
-    [null,'Paraguay'],             // R32-5 winner vs Paraguay (R32-3 winner)
-    [null,null],                   // R32-11 winner vs R32-12 winner
-    [null,null],                   // R32-10 winner vs R32-9 winner
+    ['Morocco','Canada'],    // confirmed
+    [null,'Paraguay'],       // Ecuador/Mexico winner vs Paraguay
+    [null,null],             // Austria/Spain winner vs Croatia/Portugal winner
+    [null,null],             // Bosnia/USA winner vs Congo/England winner
   ],
   qf: [
-    [null,null],  // R16[0] winner vs R16[1] winner
-    [null,null],  // R16[2] winner vs R16[3] winner
+    [null,null],
+    [null,null],
   ],
   sf: [[null,null]],
 };
 
 const BRACKET_RIGHT = {
   r32: [
-    // Group E → R16[0] (top of right)
-    ['Brazil','Japan'],
+    // → R16[0]: Norway vs Brazil
+    ['Norway','Ivory Coast'],
+    ['Japan','Brazil'],
+    // → R16[1]: Sweden/France winner vs Senegal/Belgium winner
     ['Sweden','France'],
-    // Group F → R16[1]
-    ['Ecuador','Mexico'],
-    ['Congo DR','England'],
-    // Group G → R16[2]
-    ['Australia','Egypt'],
-    ['Colombia','Ghana'],
-    // Group H → R16[3] (bottom of right)
-    ['Switzerland','Algeria'],
-    ['Argentina','Cape Verde'],
+    ['Senegal','Belgium'],
+    // → R16[2]: Algeria/Switzerland winner vs Cape Verde/Argentina winner
+    ['Algeria','Switzerland'],
+    ['Cape Verde','Argentina'],
+    // → R16[3]: Egypt/Australia winner vs Ghana/Colombia winner
+    ['Egypt','Australia'],
+    ['Ghana','Colombia'],
   ],
   r16: [
-    [null,'Brazil'],               // R32-6 winner vs Brazil (R32-2 winner)
-    [null,null],                   // R32-8 winner vs R32-7 winner
-    [null,null],                   // R32-16 winner vs R32-14 winner
-    [null,null],                   // R32-15 winner vs R32-13 winner
+    ['Norway','Brazil'],     // confirmed
+    [null,null],             // Sweden/France winner vs Senegal/Belgium winner
+    [null,null],             // Algeria/Switzerland winner vs Cape Verde/Argentina winner
+    [null,null],             // Egypt/Australia winner vs Ghana/Colombia winner
   ],
   qf: [
     [null,null],
