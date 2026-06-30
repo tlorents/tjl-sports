@@ -45,6 +45,13 @@
 
   /* ── MATCH CARDS (Today / Schedule) ── */
   .scoreboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
+
+  /* ── FOLLOW A TEAM (stacked, details expanded) ── */
+  .team-stack { display: flex; flex-direction: column; gap: 14px; max-width: 480px; }
+  .team-stack-item { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .team-stack-item .match-card { box-shadow: none; border: none; border-radius: 0; }
+  .team-stack-item .match-card.live { border: none; border-bottom: 2px solid var(--live); }
+  .team-detail { padding: 4px 14px 14px; border-top: 1px solid var(--border); }
   .match-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: border-color .15s, transform .1s; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
   .match-card:hover { border-color: var(--accent); transform: translateY(-1px); }
   .match-card.live { border: 2px solid var(--live); box-shadow: 0 0 8px rgba(16,185,129,.25); }
@@ -519,19 +526,22 @@ function onTeamSelect(name) {
   renderTeamTab(document.getElementById('main-content'));
 }
 
-function renderTeamTab(el) {
-  const teams = getAllTeamNames();
-  let html = `<div style="margin-bottom:18px">
+function teamPickerHTML(teams) {
+  return `<div style="margin-bottom:18px">
     <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px">Choose a team</label>
     <select id="team-select" onchange="onTeamSelect(this.value)" style="width:100%;max-width:320px;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px">
       <option value="">— Select a team —</option>
       ${teams.map(t => `<option value="${t}"${t===selectedTeam?' selected':''}>${t}</option>`).join('')}
     </select>
   </div>`;
+}
+
+async function renderTeamTab(el) {
+  const teams = getAllTeamNames();
+  const picker = teamPickerHTML(teams);
 
   if (!selectedTeam) {
-    html += `<div class="empty-msg">Pick a team above to see all their games — group stage and bracket</div>`;
-    el.innerHTML = html;
+    el.innerHTML = picker + `<div class="empty-msg">Pick a team above to see all their games — group stage and bracket — with stats already expanded</div>`;
     return;
   }
 
@@ -540,13 +550,25 @@ function renderTeamTab(el) {
     .sort((a,b) => new Date(a.date) - new Date(b.date));
 
   if (!games.length) {
-    html += `<div class="empty-msg">No games found for ${selectedTeam}</div>`;
-    el.innerHTML = html;
+    el.innerHTML = picker + `<div class="empty-msg">No games found for ${selectedTeam}</div>`;
     return;
   }
 
-  html += `<div class="scoreboard-grid">${games.map(matchCardHTML).join('')}</div>`;
-  el.innerHTML = html;
+  el.innerHTML = picker + `<div class="team-stack">${games.map(g =>
+    `<div class="team-stack-item">${matchCardHTML(g)}<div class="team-detail" id="team-detail-${g.id}"><div class="loading"><div class="loading-spinner"></div></div></div></div>`
+  ).join('')}</div>`;
+
+  // Fetch and fill in expanded details for each game in parallel
+  await Promise.all(games.map(async g => {
+    const elDetail = document.getElementById(`team-detail-${g.id}`);
+    if (!elDetail) return;
+    try {
+      const data = await fetchJSON(ESPN + 'summary?event=' + g.id);
+      elDetail.innerHTML = buildMatchInfoHTML(data, g.id);
+    } catch (err) {
+      elDetail.innerHTML = `<div class="error-msg">Could not load match details: ${err.message}</div>`;
+    }
+  }));
 }
 
 // ── BRACKET ──────────────────────────────────────────────────────────────────
@@ -719,7 +741,50 @@ function renderGroups(el) {
   el.innerHTML = html;
 }
 
-// ── MATCH DETAIL PANEL ───────────────────────────────────────────────────────
+// ── MATCH DETAIL (shared by modal panel + Follow a Team inline cards) ───────
+const STAT_KEYS = ['possessionPct','totalShots','shotsOnTarget','passPct','saves','wonCorners','foulsCommitted','offsides','yellowCards','redCards'];
+const STAT_LABELS = {possessionPct:'Possession',totalShots:'Shots',shotsOnTarget:'On Target',passPct:'Pass Accuracy',saves:'Saves',wonCorners:'Corners',foulsCommitted:'Fouls',offsides:'Offsides',yellowCards:'Yellow',redCards:'Red'};
+
+function buildMatchInfoHTML(data, id) {
+  const comp = data.header?.competitions?.[0];
+  const comps = comp?.competitors || [];
+  let info = '';
+  if (comp?.date) {
+    info += `<div class="panel-row"><span class="panel-label">Date</span><span>${fmtDate(comp.date)}</span></div>`;
+    info += `<div class="panel-row"><span class="panel-label">Kick-off</span><span>${fmtTime(comp.date)}</span></div>`;
+  }
+  const teamAbbrById = {};
+  for (const c of comps) {
+    if (c.team?.id && c.team?.abbreviation) teamAbbrById[c.team.id] = c.team.abbreviation;
+  }
+  const goals = (data.keyEvents||data.plays||[]).filter(p=>p.scoringPlay||p.type?.text==='Goal');
+  if (goals.length) {
+    info += `<div style="margin:12px 0 6px" class="section-label">Goals</div>`;
+    for (const g of goals) {
+      const min = g.clock?.displayValue||'';
+      const scorer = g.participants?.[0]?.athlete?.shortName||g.text||'';
+      const tAbbr = teamAbbrById[g.team?.id] || g.team?.abbreviation || '';
+      info += `<div class="event-item"><span class="event-min">${min}</span><span style="font-size:15px">⚽</span><span>${scorer}</span><span style="margin-left:auto;font-size:11px;color:var(--muted)">${flag(tAbbr)}</span></div>`;
+    }
+  }
+  const bs = data.boxscore?.teams;
+  if (bs) {
+    const hStats={}, aStats={};
+    for (const t of bs) { const m = t.homeAway==='home'?hStats:aStats; for (const s of (t.statistics||[])) m[s.name]=s.displayValue; }
+    const fmtStat = (k,v) => v===undefined ? undefined : (k==='passPct' ? Math.round(parseFloat(v)*100)+'%' : (k==='possessionPct' ? v+'%' : v));
+    if (Object.keys(hStats).length) {
+      info += `<div style="margin:12px 0 6px" class="section-label">Stats</div>`;
+      for (const k of STAT_KEYS) {
+        if (hStats[k]!==undefined || aStats[k]!==undefined)
+          info += `<div class="panel-row"><span>${fmtStat(k,hStats[k])??'-'}</span><span class="panel-label">${STAT_LABELS[k]||k}</span><span>${fmtStat(k,aStats[k])??'-'}</span></div>`;
+      }
+    }
+  }
+  if (!info) info = '<div style="color:var(--muted);font-size:13px;padding-top:8px">No details yet</div>';
+  info += `<div style="margin-top:14px;text-align:center"><a href="https://www.espn.com/soccer/match/_/gameId/${id}" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);text-decoration:none">View full match detail on ESPN →</a></div>`;
+  return info;
+}
+
 async function openMatch(id) {
   document.getElementById('panel-overlay').classList.add('open');
   document.getElementById('panel-info').innerHTML = '<div class="loading"><div class="loading-spinner"></div></div>';
@@ -746,43 +811,7 @@ async function openMatch(id) {
     document.getElementById('panel-away-score').textContent = showScore ? (away.score||'-') : '-';
     document.getElementById('panel-status').innerHTML = `<span class="${st.cls}">${st.live?'<span class="live-dot"></span> ':''}${st.text}</span>`;
 
-    let info = '';
-    if (comp?.date) {
-      info += `<div class="panel-row"><span class="panel-label">Date</span><span>${fmtDate(comp.date)}</span></div>`;
-      info += `<div class="panel-row"><span class="panel-label">Kick-off</span><span>${fmtTime(comp.date)}</span></div>`;
-    }
-    // Build team ID → abbreviation lookup from header competitors
-    const teamAbbrById = {};
-    for (const c of comps) {
-      if (c.team?.id && c.team?.abbreviation) teamAbbrById[c.team.id] = c.team.abbreviation;
-    }
-    const goals = (data.keyEvents||data.plays||[]).filter(p=>p.scoringPlay||p.type?.text==='Goal');
-    if (goals.length) {
-      info += `<div style="margin:12px 0 6px" class="section-label">Goals</div>`;
-      for (const g of goals) {
-        const min = g.clock?.displayValue||'';
-        const scorer = g.participants?.[0]?.athlete?.shortName||g.text||'';
-        const tAbbr = teamAbbrById[g.team?.id] || g.team?.abbreviation || '';
-        info += `<div class="event-item"><span class="event-min">${min}</span><span style="font-size:15px">⚽</span><span>${scorer}</span><span style="margin-left:auto;font-size:11px;color:var(--muted)">${flag(tAbbr)}</span></div>`;
-      }
-    }
-    const bs = data.boxscore?.teams;
-    if (bs) {
-      const hStats={}, aStats={};
-      for (const t of bs) { const m = t.homeAway==='home'?hStats:aStats; for (const s of (t.statistics||[])) m[s.name]=s.displayValue; }
-      const statKeys = ['possessionPct','shotsOnTarget','shots','fouls','cornerKicks','yellowCards','redCards'];
-      const statLabels = {possessionPct:'Possession',shotsOnTarget:'On Target',shots:'Shots',fouls:'Fouls',cornerKicks:'Corners',yellowCards:'Yellow',redCards:'Red'};
-      if (Object.keys(hStats).length) {
-        info += `<div style="margin:12px 0 6px" class="section-label">Stats</div>`;
-        for (const k of statKeys) {
-          if (hStats[k]!==undefined || aStats[k]!==undefined)
-            info += `<div class="panel-row"><span>${hStats[k]??'-'}</span><span class="panel-label">${statLabels[k]||k}</span><span>${aStats[k]??'-'}</span></div>`;
-        }
-      }
-    }
-    if (!info) info = '<div style="color:var(--muted);font-size:13px;padding-top:8px">No details yet</div>';
-    info += `<div style="margin-top:14px;text-align:center"><a href="https://www.espn.com/soccer/match/_/gameId/${id}" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);text-decoration:none">View full match detail on ESPN →</a></div>`;
-    document.getElementById('panel-info').innerHTML = info;
+    document.getElementById('panel-info').innerHTML = buildMatchInfoHTML(data, id);
   } catch(err) {
     document.getElementById('panel-info').innerHTML = `<div class="error-msg">Could not load match details: ${err.message}</div>`;
   }
