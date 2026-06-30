@@ -700,13 +700,18 @@ async function openMatch(id) {
       info += `<div class="panel-row"><span class="panel-label">Date</span><span>${fmtDate(comp.date)}</span></div>`;
       info += `<div class="panel-row"><span class="panel-label">Kick-off</span><span>${fmtTime(comp.date)}</span></div>`;
     }
+    // Build team ID → abbreviation lookup from header competitors
+    const teamAbbrById = {};
+    for (const c of comps) {
+      if (c.team?.id && c.team?.abbreviation) teamAbbrById[c.team.id] = c.team.abbreviation;
+    }
     const goals = (data.keyEvents||data.plays||[]).filter(p=>p.scoringPlay||p.type?.text==='Goal');
     if (goals.length) {
       info += `<div style="margin:12px 0 6px" class="section-label">Goals</div>`;
       for (const g of goals) {
         const min = g.clock?.displayValue||'';
         const scorer = g.participants?.[0]?.athlete?.shortName||g.text||'';
-        const tAbbr = g.team?.abbreviation||'';
+        const tAbbr = teamAbbrById[g.team?.id] || g.team?.abbreviation || '';
         info += `<div class="event-item"><span class="event-min">${min}</span><span style="font-size:15px">⚽</span><span>${scorer}</span><span style="margin-left:auto;font-size:11px;color:var(--muted)">${flag(tAbbr)}</span></div>`;
       }
     }
