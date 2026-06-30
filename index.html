@@ -47,6 +47,11 @@
   .scoreboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
 
   /* ── FOLLOW A TEAM (stacked, details expanded) ── */
+  .team-summary-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; max-width: 480px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .ts-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .ts-row:last-child { border-bottom: none; }
+  .ts-label { color: var(--muted); flex-shrink: 0; margin-right: 10px; }
+  .ts-val { font-weight: 600; text-align: right; }
   .team-stack { display: flex; flex-direction: column; gap: 14px; max-width: 480px; }
   .team-stack-item { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
   .team-stack-item .match-card { box-shadow: none; border: none; border-radius: 0; }
@@ -536,12 +541,83 @@ function teamPickerHTML(teams) {
   </div>`;
 }
 
+function buildTeamSummaryHTML(teamName, games, dataById) {
+  let w=0, d=0, l=0, gf=0, ga=0;
+  const scorers = {}, yellows = {};
+  let reds = 0;
+  const form = [];
+
+  for (const g of games) {
+    const comps = g.competitions?.[0]?.competitors || [];
+    const me = comps.find(c => c.team?.displayName === teamName);
+    const opp = comps.find(c => c.team?.displayName !== teamName);
+    const st = getStatus(g);
+    if (st.done && me && opp) {
+      const ms = parseInt(me.score||0), os = parseInt(opp.score||0);
+      gf += ms; ga += os;
+      if (ms > os) { w++; form.push('W'); }
+      else if (ms < os) { l++; form.push('L'); }
+      else { d++; form.push('D'); }
+    }
+    const data = dataById[g.id];
+    if (!data) continue;
+    for (const ev of (data.keyEvents||data.plays||[])) {
+      if (ev.team?.displayName !== teamName) continue;
+      const name = ev.participants?.[0]?.athlete?.shortName;
+      if (!name) continue;
+      const t = ev.type?.text;
+      if (t === 'Goal') scorers[name] = (scorers[name]||0) + 1;
+      else if (t === 'Yellow Card') yellows[name] = (yellows[name]||0) + 1;
+      else if (t === 'Red Card') reds++;
+    }
+  }
+
+  const topScorers = Object.entries(scorers).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const suspensionWatch = Object.entries(yellows).filter(([,c])=>c>=2);
+  const totalYellow = Object.values(yellows).reduce((a,b)=>a+b,0);
+  const played = w+d+l;
+  const last3 = form.slice(-3);
+
+  const formPill = r => `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;color:#fff;background:${r==='W'?'var(--live)':r==='L'?'#dc2626':'#9ca3af'}">${r}</span>`;
+
+  let html = `<div class="team-summary-card">`;
+
+  // Team name + flag
+  const abbr = games[0]?.competitions?.[0]?.competitors?.find(c=>c.team?.displayName===teamName)?.team?.abbreviation||'';
+  html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+    ${flag(abbr,28)}
+    <span style="font-size:17px;font-weight:800">${teamName}</span>
+    ${played ? `<span style="margin-left:auto;font-size:11px;color:var(--muted)">${played} game${played!==1?'s':''} played</span>` : ''}
+  </div>`;
+
+  if (played) {
+    html += `<div class="ts-row"><span class="ts-label">Record</span><span class="ts-val">${w}W · ${d}D · ${l}L</span></div>`;
+    html += `<div class="ts-row"><span class="ts-label">Goals</span><span class="ts-val">${gf} scored · ${ga} conceded</span></div>`;
+    if (last3.length) html += `<div class="ts-row"><span class="ts-label">Form</span><span class="ts-val" style="display:flex;gap:4px">${last3.map(formPill).join('')}</span></div>`;
+  } else {
+    html += `<div style="color:var(--muted);font-size:13px">No completed games yet</div>`;
+  }
+
+  if (topScorers.length) {
+    html += `<div class="ts-row"><span class="ts-label">Top Scorer${topScorers.length>1?'s':''}</span><span class="ts-val">${topScorers.map(([n,c])=>`${n} (${c})`).join(' · ')}</span></div>`;
+  }
+
+  html += `<div class="ts-row"><span class="ts-label">Discipline</span><span class="ts-val">${totalYellow} yellow${reds?` · ${reds} red`:''}</span></div>`;
+
+  if (suspensionWatch.length) {
+    html += `<div class="ts-row" style="color:#b45309"><span class="ts-label">⚠️ Suspension Risk</span><span class="ts-val">${suspensionWatch.map(([n,c])=>`${n} (${c}🟨)`).join(' · ')}</span></div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
 async function renderTeamTab(el) {
   const teams = getAllTeamNames();
   const picker = teamPickerHTML(teams);
 
   if (!selectedTeam) {
-    el.innerHTML = picker + `<div class="empty-msg">Pick a team above to see all their games — group stage and bracket — with stats already expanded</div>`;
+    el.innerHTML = picker + `<div class="empty-msg">Pick a team to see their record, top scorers, and every game with expanded stats</div>`;
     return;
   }
 
@@ -554,21 +630,30 @@ async function renderTeamTab(el) {
     return;
   }
 
-  el.innerHTML = picker + `<div class="team-stack">${games.map(g =>
-    `<div class="team-stack-item">${matchCardHTML(g)}<div class="team-detail" id="team-detail-${g.id}"><div class="loading"><div class="loading-spinner"></div></div></div></div>`
-  ).join('')}</div>`;
+  // Render skeleton immediately — summary + stacked game cards both show loading spinners
+  el.innerHTML = picker +
+    `<div id="team-summary-block" style="margin-bottom:16px"><div class="loading"><div class="loading-spinner"></div></div></div>` +
+    `<div class="team-stack">${games.map(g =>
+      `<div class="team-stack-item">${matchCardHTML(g)}<div class="team-detail" id="team-detail-${g.id}"><div class="loading"><div class="loading-spinner"></div></div></div></div>`
+    ).join('')}</div>`;
 
-  // Fetch and fill in expanded details for each game in parallel
-  await Promise.all(games.map(async g => {
-    const elDetail = document.getElementById(`team-detail-${g.id}`);
-    if (!elDetail) return;
-    try {
-      const data = await fetchJSON(ESPN + 'summary?event=' + g.id);
-      elDetail.innerHTML = buildMatchInfoHTML(data, g.id);
-    } catch (err) {
-      elDetail.innerHTML = `<div class="error-msg">Could not load match details: ${err.message}</div>`;
-    }
+  // Fetch all game summaries in parallel — used for both summary block and per-game details
+  const results = await Promise.all(games.map(async g => {
+    try { return { id: g.id, data: await fetchJSON(ESPN + 'summary?event=' + g.id) }; }
+    catch(err) { return { id: g.id, data: null, err }; }
   }));
+  const dataById = Object.fromEntries(results.map(r => [r.id, r.data]));
+
+  // Fill summary block
+  const summaryEl = document.getElementById('team-summary-block');
+  if (summaryEl) summaryEl.innerHTML = buildTeamSummaryHTML(selectedTeam, games, dataById);
+
+  // Fill per-game detail blocks
+  for (const { id, data, err } of results) {
+    const elDetail = document.getElementById(`team-detail-${id}`);
+    if (!elDetail) continue;
+    elDetail.innerHTML = data ? buildMatchInfoHTML(data, id) : `<div class="error-msg">Could not load details</div>`;
+  }
 }
 
 // ── BRACKET ──────────────────────────────────────────────────────────────────
