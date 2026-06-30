@@ -47,7 +47,7 @@
   .scoreboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
   .match-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: border-color .15s, transform .1s; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
   .match-card:hover { border-color: var(--accent); transform: translateY(-1px); }
-  .match-card.live { border-left: 3px solid var(--live); }
+  .match-card.live { border: 2px solid var(--live); box-shadow: 0 0 8px rgba(16,185,129,.25); }
   .match-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; }
   .match-status { font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; display: flex; align-items: center; gap: 4px; }
   .s-live { color: var(--live); }
@@ -81,7 +81,7 @@
 
   .b-match { background: var(--card); border: 1px solid var(--border); border-radius: 7px; padding: 5px 7px; cursor: pointer; transition: border-color .15s; margin: 2px 0; min-width: 110px; box-shadow: 0 1px 3px rgba(0,0,0,.07); }
   .b-match:hover { border-color: var(--accent); }
-  .b-match.live { border-left: 2px solid var(--live); }
+  .b-match.live { border: 2px solid var(--live); box-shadow: 0 0 8px rgba(16,185,129,.25); }
 
   .b-team { display: flex; align-items: center; justify-content: space-between; gap: 5px; padding: 2px 0; font-size: 12px; }
   .b-team:first-child { border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 4px; }
