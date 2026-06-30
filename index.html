@@ -334,7 +334,8 @@ function getStatus(evt) {
   const s = evt.status?.type;
   if (!s) return { text: '', cls: '' };
   if (s.completed) return { text: 'FT', cls: 's-final', done: true };
-  if (s.name === 'STATUS_IN_PROGRESS' || s.name === 'STATUS_HALFTIME') {
+  const liveStatuses = ['STATUS_IN_PROGRESS','STATUS_FIRST_HALF','STATUS_SECOND_HALF','STATUS_HALFTIME','STATUS_EXTRA_TIME','STATUS_PENALTY'];
+  if (liveStatuses.includes(s.name)) {
     const t = s.name === 'STATUS_HALFTIME' ? 'HT' : evt.status.displayClock || 'LIVE';
     return { text: t, cls: 's-live', live: true };
   }
@@ -453,7 +454,8 @@ function matchCardHTML(evt) {
 }
 
 function renderToday(el) {
-  const live = allEvents.filter(e => { const s=e.status?.type?.name; return s==='STATUS_IN_PROGRESS'||s==='STATUS_HALFTIME'; });
+  const liveNames = ['STATUS_IN_PROGRESS','STATUS_FIRST_HALF','STATUS_SECOND_HALF','STATUS_HALFTIME','STATUS_EXTRA_TIME','STATUS_PENALTY'];
+  const live = allEvents.filter(e => liveNames.includes(e.status?.type?.name));
   const todayRest = allEvents.filter(e => isToday(e.date) && !live.includes(e));
   const upcoming = allEvents.filter(e => {
     const s = e.status?.type;
