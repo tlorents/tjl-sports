@@ -432,6 +432,7 @@ function matchCardHTML(evt) {
   const showScore = st.live || st.done;
   const slug = evt.season?.slug || '';
   const roundLabel = slug.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+  const venueCity = evt.competitions?.[0]?.venue?.address?.city || '';
   return `<div class="match-card${st.live?' live':''}" onclick="openMatch('${evt.id}')">
     <div class="match-meta">
       <span class="match-status ${st.cls}">${st.live?'<span class="live-dot"></span> ':''}${st.text}</span>
@@ -447,7 +448,7 @@ function matchCardHTML(evt) {
       </div>
       <div class="team away"><span class="team-name">${aName}</span><span class="team-flag">${flag(aAbbr)}</span></div>
     </div>
-    ${!showScore ? `<div class="match-time">${fmtDate(evt.date)}</div>` : ''}
+    ${!showScore ? `${venueCity ? `<div class="match-time">${venueCity}</div>` : ''}<div class="match-time">${fmtDate(evt.date)}</div>` : ''}
   </div>`;
 }
 
@@ -533,11 +534,15 @@ function bMatchHTML(name1, name2, slugHint, side) {
   }
 
   const evtId = evt?.id || '';
-  return `<div class="b-match${st.live?' live':''}${isTbd?' b-tbd':''}" ${evtId?`onclick="openMatch('${evtId}')"`:'style="cursor:default"'}>
-    ${teamRow(hDisp, hFlag, home?.score, hWin, aWin && !hWin, tbd1)}
-    ${teamRow(aDisp, aFlag, away?.score, aWin, hWin && !aWin, tbd2)}
-    ${!showScore && evt ? `<div class="b-time">${fmtDate(evt.date)} &middot; ${fmtTime(evt.date)}</div>` : ''}
-    ${!evt ? `<div class="b-time" style="font-style:italic">TBD</div>` : ''}
+  const bVenueCity = evt?.competitions?.[0]?.venue?.address?.city || '';
+  return `<div>
+    <div class="b-match${st.live?' live':''}${isTbd?' b-tbd':''}" ${evtId?`onclick="openMatch('${evtId}')"`:'style="cursor:default"'}>
+      ${teamRow(hDisp, hFlag, home?.score, hWin, aWin && !hWin, tbd1)}
+      ${teamRow(aDisp, aFlag, away?.score, aWin, hWin && !aWin, tbd2)}
+      ${!showScore && evt ? `<div class="b-time">${fmtDate(evt.date)} &middot; ${fmtTime(evt.date)}</div>` : ''}
+      ${!evt ? `<div class="b-time" style="font-style:italic">TBD</div>` : ''}
+    </div>
+    ${bVenueCity ? `<div style="font-size:9px;color:var(--muted);text-align:center;margin-top:3px;letter-spacing:.3px">📍 ${bVenueCity}</div>` : ''}
   </div>`;
 }
 
