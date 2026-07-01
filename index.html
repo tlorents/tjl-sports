@@ -831,16 +831,22 @@ const STAT_KEYS = ['possessionPct','totalShots','shotsOnTarget','passPct','saves
 const STAT_LABELS = {possessionPct:'Possession',totalShots:'Shots',shotsOnTarget:'On Target',passPct:'Pass Accuracy',saves:'Saves',wonCorners:'Corners',foulsCommitted:'Fouls',offsides:'Offsides',yellowCards:'Yellow',redCards:'Red'};
 
 function buildMatchInfoHTML(data, id) {
-  const comp = data.header?.competitions?.[0];
-  const comps = comp?.competitors || [];
   let info = '';
-  if (comp?.date) {
-    info += `<div class="panel-row"><span class="panel-label">Date</span><span>${fmtDate(comp.date)}</span></div>`;
-    info += `<div class="panel-row"><span class="panel-label">Kick-off</span><span>${fmtTime(comp.date)}</span></div>`;
+  // Use allEvents for date and team abbreviation lookup — ESPN summary has no 'header' key
+  const evt = allEvents.find(e=>e.id===id);
+  const evtComp = evt?.competitions?.[0];
+  const evtDate = evtComp?.date || evt?.date;
+  if (evtDate) {
+    info += `<div class="panel-row"><span class="panel-label">Date</span><span>${fmtDate(evtDate)}</span></div>`;
+    info += `<div class="panel-row"><span class="panel-label">Kick-off</span><span>${fmtTime(evtDate)}</span></div>`;
   }
   const teamAbbrById = {};
-  for (const c of comps) {
+  for (const c of (evtComp?.competitors || [])) {
     if (c.team?.id && c.team?.abbreviation) teamAbbrById[c.team.id] = c.team.abbreviation;
+  }
+  // Also pull from boxscore rosters as fallback
+  for (const r of (data.boxscore?.rosters || [])) {
+    if (r.team?.id && r.team?.abbreviation) teamAbbrById[r.team.id] = r.team.abbreviation;
   }
   const goals = (data.keyEvents||data.plays||[]).filter(p=>p.scoringPlay||p.type?.text==='Goal');
   if (goals.length) {
@@ -875,25 +881,33 @@ async function openMatch(id) {
   document.getElementById('panel-info').innerHTML = '<div class="loading"><div class="loading-spinner"></div></div>';
   try {
     const data = await fetchJSON(ESPN + 'summary?event=' + id);
-    const comp = data.header?.competitions?.[0];
-    const comps = comp?.competitors || [];
-    const home = comps.find(c=>c.homeAway==='home')||comps[0]||{};
-    const away = comps.find(c=>c.homeAway==='away')||comps[1]||{};
-    const hAbbr = home.team?.abbreviation||'';
-    const aAbbr = away.team?.abbreviation||'';
 
-    document.getElementById('panel-round').textContent = comp?.notes?.[0]?.headline || '';
-    document.getElementById('panel-venue').textContent = [data.gameInfo?.venue?.fullName, data.gameInfo?.venue?.address?.city].filter(Boolean).join(' · ');
-    document.getElementById('panel-home-flag').innerHTML = flag(hAbbr, 28);
-    document.getElementById('panel-home-name').textContent = home.team?.displayName||'';
-    document.getElementById('panel-away-flag').innerHTML = flag(aAbbr, 28);
-    document.getElementById('panel-away-name').textContent = away.team?.displayName||'';
-
+    // Use allEvents (scoreboard) as primary source for header — ESPN summary has no 'header' key
     const evt = allEvents.find(e=>e.id===id);
+    const evtComp = evt?.competitions?.[0];
+    const evtComps = evtComp?.competitors || [];
+    const evtHome = evtComps.find(c=>c.homeAway==='home') || evtComps[0] || {};
+    const evtAway = evtComps.find(c=>c.homeAway==='away') || evtComps[1] || {};
+
+    // Fall back to boxscore rosters for abbreviations if needed
+    const rosters = data.boxscore?.rosters || [];
+    const hAbbr = evtHome.team?.abbreviation || rosters.find(r=>r.homeAway==='home')?.team?.abbreviation || '';
+    const aAbbr = evtAway.team?.abbreviation || rosters.find(r=>r.homeAway==='away')?.team?.abbreviation || '';
+    const hName = evtHome.team?.displayName || rosters.find(r=>r.homeAway==='home')?.team?.displayName || '';
+    const aName = evtAway.team?.displayName || rosters.find(r=>r.homeAway==='away')?.team?.displayName || '';
+
+    const venue = data.boxscore?.gameInfo?.venue || evtComp?.venue;
+    document.getElementById('panel-round').textContent = evtComp?.notes?.[0]?.headline || '';
+    document.getElementById('panel-venue').textContent = [venue?.fullName, venue?.address?.city].filter(Boolean).join(' · ');
+    document.getElementById('panel-home-flag').innerHTML = flag(hAbbr, 28);
+    document.getElementById('panel-home-name').textContent = hName;
+    document.getElementById('panel-away-flag').innerHTML = flag(aAbbr, 28);
+    document.getElementById('panel-away-name').textContent = aName;
+
     const st = getStatus(evt);
     const showScore = st.live || st.done;
-    document.getElementById('panel-home-score').textContent = showScore ? (home.score||'-') : '-';
-    document.getElementById('panel-away-score').textContent = showScore ? (away.score||'-') : '-';
+    document.getElementById('panel-home-score').textContent = showScore ? (evtHome.score||'-') : '-';
+    document.getElementById('panel-away-score').textContent = showScore ? (evtAway.score||'-') : '-';
     document.getElementById('panel-status').innerHTML = `<span class="${st.cls}">${st.live?'<span class="live-dot"></span> ':''}${st.text}</span>`;
 
     document.getElementById('panel-info').innerHTML = buildMatchInfoHTML(data, id);
