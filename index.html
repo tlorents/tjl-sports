@@ -899,9 +899,9 @@ async function openMatch(id) {
     const venue = data.boxscore?.gameInfo?.venue || evtComp?.venue;
     document.getElementById('panel-round').textContent = evtComp?.notes?.[0]?.headline || '';
     document.getElementById('panel-venue').textContent = [venue?.fullName, venue?.address?.city].filter(Boolean).join(' · ');
-    document.getElementById('panel-home-flag').innerHTML = flag(hAbbr, 28);
+    document.getElementById('panel-home-flag').innerHTML = flag(hAbbr, 40);
     document.getElementById('panel-home-name').textContent = hName;
-    document.getElementById('panel-away-flag').innerHTML = flag(aAbbr, 28);
+    document.getElementById('panel-away-flag').innerHTML = flag(aAbbr, 40);
     document.getElementById('panel-away-name').textContent = aName;
 
     const st = getStatus(evt);
