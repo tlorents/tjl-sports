@@ -585,7 +585,7 @@ function buildTeamSummaryHTML(teamName, games, dataById) {
   // Team name + flag
   const abbr = games[0]?.competitions?.[0]?.competitors?.find(c=>c.team?.displayName===teamName)?.team?.abbreviation||'';
   html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
-    ${flag(abbr,28)}
+    ${flag(abbr,40)}
     <span style="font-size:17px;font-weight:800">${teamName}</span>
     ${played ? `<span style="margin-left:auto;font-size:11px;color:var(--muted)">${played} game${played!==1?'s':''} played</span>` : ''}
   </div>`;
