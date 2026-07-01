@@ -257,22 +257,22 @@ function isPlaceholder(name) {
 
 const BRACKET_LEFT = {
   r32: [
-    // → R16[0]: Canada vs Morocco
-    ['Canada','South Africa'],
-    ['Morocco','Netherlands'],
-    // → R16[1]: Paraguay vs France
-    ['Sweden','France'],
-    ['Paraguay','Germany'],
+    // → R16[0]: Paraguay vs France (top-left)
+    ['Germany','Paraguay'],
+    ['France','Sweden'],
+    // → R16[1]: Canada vs Morocco
+    ['South Africa','Canada'],
+    ['Netherlands','Morocco'],
     // → R16[2]: TBD Mon Jul 6
-    ['Belgium','Senegal'],
-    ['Bosnia-Herzegovina','United States'],
-    // → R16[3]: TBD Mon Jul 6
-    ['Spain','Austria'],
     ['Portugal','Croatia'],
+    ['Spain','Austria'],
+    // → R16[3]: TBD Mon Jul 6
+    ['United States','Bosnia-Herzegovina'],
+    ['Belgium','Senegal'],
   ],
   r16: [
-    ['Canada','Morocco'],
     ['Paraguay','France'],
+    ['Canada','Morocco'],
     [null,null],
     [null,null],
   ],
@@ -285,18 +285,18 @@ const BRACKET_LEFT = {
 
 const BRACKET_RIGHT = {
   r32: [
-    // → R16[0]: Brazil vs Norway
-    ['Norway','Ivory Coast'],
-    ['Japan','Brazil'],
+    // → R16[0]: Brazil vs Norway (top-right)
+    ['Brazil','Japan'],
+    ['Ivory Coast','Norway'],
     // → R16[1]: Mexico vs England
-    ['Ecuador','Mexico'],
-    ['Congo DR','England'],
+    ['Mexico','Ecuador'],
+    ['England','Congo DR'],
     // → R16[2]: TBD Tue Jul 7
-    ['Algeria','Switzerland'],
-    ['Colombia','Ghana'],
-    // → R16[3]: TBD Tue Jul 7
+    ['Argentina','Cape Verde'],
     ['Australia','Egypt'],
-    ['Cape Verde','Argentina'],
+    // → R16[3]: TBD Tue Jul 7
+    ['Switzerland','Algeria'],
+    ['Colombia','Ghana'],
   ],
   r16: [
     ['Brazil','Norway'],
