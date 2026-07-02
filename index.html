@@ -374,18 +374,35 @@ function winnerAbbr(evt) {
   if (!evt?.status?.type?.completed) return null;
   const [h, a] = getScores(evt);
   if (!h || !a) return null;
+  // winner flag handles penalties (scores tied in regulation)
+  if (h.winner) return h.team?.abbreviation;
+  if (a.winner) return a.team?.abbreviation;
   const hs = parseInt(h.score), as = parseInt(a.score);
   if (hs > as) return h.team?.abbreviation;
   if (as > hs) return a.team?.abbreviation;
-  return null; // draw - check penalties?
+  return null;
 }
 
 function winnerName(evt) {
   if (!evt?.status?.type?.completed) return null;
   const [h, a] = getScores(evt);
+  if (h?.winner) return h?.team?.displayName;
+  if (a?.winner) return a?.team?.displayName;
   const hs = parseInt(h?.score), as = parseInt(a?.score);
   if (hs > as) return h?.team?.displayName;
   if (as > hs) return a?.team?.displayName;
+  return null;
+}
+
+function getR32Winner(team1, team2) {
+  const n1 = team1 ? normName(team1) : null;
+  const n2 = team2 ? normName(team2) : null;
+  for (const e of (byRound['round-of-32'] || [])) {
+    const en = normName(e.name);
+    if ((!n1 || en.includes(n1)) && (!n2 || en.includes(n2))) {
+      return winnerName(e);
+    }
+  }
   return null;
 }
 
@@ -779,9 +796,16 @@ function renderBracket(el) {
     ${champ ? `<div style="margin-top:10px;text-align:center"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Champion</div><div class="b-champion-name">${champ}</div></div>` : ''}
   </div>`;
 
-  // Left R16 slots (populate from known data + TBD)
-  const lR16 = BRACKET_LEFT.r16;
-  const rR16 = BRACKET_RIGHT.r16;
+  // Derive R16 slots: use hardcoded known teams, fall back to R32 winners from ESPN
+  function deriveR16(bracket) {
+    return bracket.r16.map((known, idx) => {
+      const w1 = known[0] || getR32Winner(bracket.r32[idx*2][0],   bracket.r32[idx*2][1]);
+      const w2 = known[1] || getR32Winner(bracket.r32[idx*2+1][0], bracket.r32[idx*2+1][1]);
+      return [w1, w2];
+    });
+  }
+  const lR16 = deriveR16(BRACKET_LEFT);
+  const rR16 = deriveR16(BRACKET_RIGHT);
   const lQF = BRACKET_LEFT.qf;
   const rQF = BRACKET_RIGHT.qf;
   const lSF = BRACKET_LEFT.sf;
