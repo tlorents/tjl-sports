@@ -394,10 +394,11 @@ function winnerName(evt) {
   return null;
 }
 
-function getR32Winner(team1, team2) {
+function getRoundWinner(slug, team1, team2) {
+  if (!team1 && !team2) return null;
   const n1 = team1 ? normName(team1) : null;
   const n2 = team2 ? normName(team2) : null;
-  for (const e of (byRound['round-of-32'] || [])) {
+  for (const e of (byRound[slug] || [])) {
     const en = normName(e.name);
     if ((!n1 || en.includes(n1)) && (!n2 || en.includes(n2))) {
       return winnerName(e);
@@ -405,6 +406,7 @@ function getR32Winner(team1, team2) {
   }
   return null;
 }
+function getR32Winner(t1, t2) { return getRoundWinner('round-of-32', t1, t2); }
 
 function fmtTime(d) {
   if (!d) return '';
@@ -778,16 +780,15 @@ function renderBracket(el) {
   const finalSt = getStatus(finalEvt);
   const champ = winnerName(finalEvt);
   const [fh, fa] = getScores(finalEvt);
+  // Use ESPN final event if available, otherwise show SF winners as TBD finalists
+  const finalN1 = fh?.team?.displayName || finalTeam1;
+  const finalN2 = fa?.team?.displayName || finalTeam2;
 
   const finalHTML = `<div class="b-final-col">
     <div class="b-trophy">🏆</div>
     <div class="b-final-label">Final</div>
-    ${finalEvt
-      ? bMatchHTML(
-          fh?.team?.displayName || null,
-          fa?.team?.displayName || null,
-          'final'
-        )
+    ${(finalN1 || finalN2)
+      ? bMatchHTML(finalN1 || null, finalN2 || null, 'final')
       : `<div class="b-match b-tbd" style="cursor:default;min-width:110px">
           <div class="b-team b-tbd"><div class="b-team-info"><span class="b-flag">${flag(null)}</span><span class="b-name">TBD</span></div></div>
           <div class="b-team b-tbd"><div class="b-team-info"><span class="b-flag">${flag(null)}</span><span class="b-name">TBD</span></div></div>
@@ -806,10 +807,22 @@ function renderBracket(el) {
   }
   const lR16 = deriveR16(BRACKET_LEFT);
   const rR16 = deriveR16(BRACKET_RIGHT);
-  const lQF = BRACKET_LEFT.qf;
-  const rQF = BRACKET_RIGHT.qf;
-  const lSF = BRACKET_LEFT.sf;
-  const rSF = BRACKET_RIGHT.sf;
+
+  function deriveRound(known, prevSlots, slug) {
+    return known.map((k, idx) => [
+      k[0] || getRoundWinner(slug, prevSlots[idx*2]?.[0],   prevSlots[idx*2]?.[1]),
+      k[1] || getRoundWinner(slug, prevSlots[idx*2+1]?.[0], prevSlots[idx*2+1]?.[1]),
+    ]);
+  }
+
+  const lQF = deriveRound(BRACKET_LEFT.qf,  lR16, 'round-of-16');
+  const rQF = deriveRound(BRACKET_RIGHT.qf, rR16, 'round-of-16');
+  const lSF = deriveRound(BRACKET_LEFT.sf,  lQF,  'quarterfinals');
+  const rSF = deriveRound(BRACKET_RIGHT.sf, rQF,  'quarterfinals');
+
+  // Final teams come from SF winners
+  const finalTeam1 = getRoundWinner('semifinals', lSF[0]?.[0], lSF[0]?.[1]);
+  const finalTeam2 = getRoundWinner('semifinals', rSF[0]?.[0], rSF[0]?.[1]);
 
   const html = `<div class="bracket-wrap"><div class="bracket" style="min-height:620px;min-width:1500px">
     ${roundCol('Round of 32', lR32.map(p=>[p[0],p[1]]), 'round-of-32')}
