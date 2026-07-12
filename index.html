@@ -426,7 +426,7 @@ async function fetchJSON(url) { const r = await fetch(url); if(!r.ok) throw new 
 
 async function loadAll() {
   const [scoreData, standData] = await Promise.all([
-    fetchJSON(ESPN + 'scoreboard?dates=20260611-20260720&limit=100'),
+    fetchJSON(ESPN + 'scoreboard?dates=20260611-20260720&limit=200'),
     fetchJSON('https://site.api.espn.com/apis/v2/sports/soccer/fifa.world/standings').catch(() => ({})),
   ]);
   allEvents = scoreData.events || [];
@@ -797,10 +797,6 @@ function renderBracket(el) {
   const rQF = deriveRound(BRACKET_RIGHT.qf, rR16, 'round-of-16');
   const lSF = deriveRound(BRACKET_LEFT.sf,  lQF,  'quarterfinals');
   const rSF = deriveRound(BRACKET_RIGHT.sf, rQF,  'quarterfinals');
-  console.log('[bracket debug] lQF:', JSON.stringify(lQF), 'rQF:', JSON.stringify(rQF));
-  console.log('[bracket debug] lSF:', JSON.stringify(lSF), 'rSF:', JSON.stringify(rSF));
-  console.log('[bracket debug] byRound keys:', Object.keys(byRound));
-  console.log('[bracket debug] QF events:', (byRound['quarterfinals']||[]).map(e=>e.name+' completed='+e.status?.type?.completed));
 
   const finalTeam1 = getRoundWinner('semifinals', lSF[0]?.[0], lSF[0]?.[1]);
   const finalTeam2 = getRoundWinner('semifinals', rSF[0]?.[0], rSF[0]?.[1]);
