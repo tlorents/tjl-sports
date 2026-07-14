@@ -131,9 +131,13 @@
   .b-final-champ { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
   .b-final-champ-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 2px; }
   .b-final-champ-name { font-size: 14px; font-weight: 800; color: #f59e0b; }
-  .b-final-logo { width: 72px; height: 72px; object-fit: contain; }
-  .b-final-logo-placeholder { width: 72px; height: 72px; border-radius: 8px; background: var(--border); }
   .b-final-score { font-size: 24px; font-weight: 900; line-height: 1; margin-top: 2px; }
+  /* TBD split view */
+  .b-final-split { display: flex; align-items: stretch; gap: 0; width: 100%; }
+  .b-final-sf-side { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 6px; }
+  .b-final-sf-logos { display: flex; gap: 4px; align-items: center; justify-content: center; }
+  .b-final-sf-label { font-size: 9px; color: var(--muted); text-align: center; line-height: 1.3; font-weight: 500; }
+  .b-final-split-divider { width: 1px; background: var(--border); margin: 4px 0; }
 
   /* ── GROUPS ── */
   .groups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(255px, 1fr)); gap: 12px; }
@@ -832,37 +836,74 @@ function renderBracket(el) {
   const finalN2 = fa?.team?.displayName || finalTeam2;
 
   // Final event details
-  const finalId1 = fh?.team?.id || findEvent(lSF[0]?.[0], lSF[0]?.[1], ['semifinals'])?.competitions?.[0]?.competitors?.find(c=>c.team?.abbreviation===winnerAbbr(findEvent(lSF[0]?.[0], lSF[0]?.[1], ['semifinals'])))?.team?.id || null;
-  const finalId2 = fa?.team?.id || findEvent(rSF[0]?.[0], rSF[0]?.[1], ['semifinals'])?.competitions?.[0]?.competitors?.find(c=>c.team?.abbreviation===winnerAbbr(findEvent(rSF[0]?.[0], rSF[0]?.[1], ['semifinals'])))?.team?.id || null;
   const finalShowScore = finalSt.live || finalSt.done;
   const finalDate = finalEvt?.competitions?.[0]?.date || finalEvt?.date;
   const finalVenue = finalEvt?.competitions?.[0]?.venue;
   const finalVenueStr = [finalVenue?.address?.city, finalVenue?.address?.state].filter(Boolean).join(', ');
   const finalEvtId = finalEvt?.id || '';
 
-  function teamLogo(teamId) {
-    if (!teamId) return `<div class="b-final-logo-placeholder"></div>`;
-    return `<img class="b-final-logo" src="https://a.espncdn.com/i/teamlogos/soccer/500/${teamId}.png" onerror="this.style.display='none'" alt="">`;
+  // Pull team IDs — from final event if available, else from SF events
+  const lSFEvt = findEvent(lSF[0]?.[0], lSF[0]?.[1], ['semifinals']);
+  const rSFEvt = findEvent(rSF[0]?.[0], rSF[0]?.[1], ['semifinals']);
+  const lSFComps = lSFEvt?.competitions?.[0]?.competitors || [];
+  const rSFComps = rSFEvt?.competitions?.[0]?.competitors || [];
+  const lSFWinAbbr = winnerAbbr(lSFEvt);
+  const rSFWinAbbr = winnerAbbr(rSFEvt);
+  const getId = c => c?.team?.id;
+  const finalId1 = fh?.team?.id || (lSFWinAbbr ? getId(lSFComps.find(c=>c.team?.abbreviation===lSFWinAbbr)) : null);
+  const finalId2 = fa?.team?.id || (rSFWinAbbr ? getId(rSFComps.find(c=>c.team?.abbreviation===rSFWinAbbr)) : null);
+  // SF team IDs for TBD split view (all 4 teams)
+  const lSFId1 = getId(lSFComps[0]), lSFId2 = getId(lSFComps[1]);
+  const rSFId1 = getId(rSFComps[0]), rSFId2 = getId(rSFComps[1]);
+  const lSFN1 = lSFComps[0]?.team?.shortDisplayName || lSFComps[0]?.team?.displayName || '';
+  const lSFN2 = lSFComps[1]?.team?.shortDisplayName || lSFComps[1]?.team?.displayName || '';
+  const rSFN1 = rSFComps[0]?.team?.shortDisplayName || rSFComps[0]?.team?.displayName || '';
+  const rSFN2 = rSFComps[1]?.team?.shortDisplayName || rSFComps[1]?.team?.displayName || '';
+
+  function teamLogo(teamId, size=72) {
+    if (!teamId) return `<div style="width:${size}px;height:${size}px;border-radius:8px;background:var(--border)"></div>`;
+    return `<img style="width:${size}px;height:${size}px;object-fit:contain" src="https://a.espncdn.com/i/teamlogos/soccer/500/${teamId}.png" onerror="this.style.display='none'" alt="">`;
   }
 
-  const finalHTML = `<div class="b-final-col">
-    <div class="b-final-trophy">🏆</div>
-    <div class="b-final-title">The Final</div>
-    <div class="b-final-card${finalSt.live?' live':''}" ${finalEvtId ? `onclick="openMatch('${finalEvtId}')"` : 'style="cursor:default"'}>
-      <div class="b-final-matchup">
+  // Two finalist logos known → big side-by-side crests
+  // TBD → split card showing both SF matchups (2x2 mini crests)
+  const knownFinalists = finalId1 && finalId2;
+  const finalistInner = knownFinalists
+    ? `<div class="b-final-matchup">
         <div class="b-final-team">
           ${teamLogo(finalId1)}
-          <div class="b-final-team-name${!finalN1?' tbd':''}">${finalN1 || 'TBD'}</div>
+          <div class="b-final-team-name">${finalN1 || ''}</div>
           ${finalShowScore ? `<div class="b-final-score">${fh?.score ?? '-'}</div>` : ''}
         </div>
         <div class="b-final-vs">${finalShowScore ? '' : 'vs'}</div>
         <div class="b-final-team">
           ${teamLogo(finalId2)}
-          <div class="b-final-team-name${!finalN2?' tbd':''}">${finalN2 || 'TBD'}</div>
+          <div class="b-final-team-name">${finalN2 || ''}</div>
           ${finalShowScore ? `<div class="b-final-score">${fa?.score ?? '-'}</div>` : ''}
         </div>
-      </div>
-      ${finalDate ? `<div class="b-final-meta">${fmtDate(finalDate)} &middot; ${fmtTime(finalDate)}</div>` : ''}
+      </div>`
+    : `<div class="b-final-split">
+        <div class="b-final-sf-side">
+          <div class="b-final-sf-logos">
+            ${teamLogo(lSFId1, 52)}${teamLogo(lSFId2, 52)}
+          </div>
+          <div class="b-final-sf-label">${lSFN1 && lSFN2 ? `${lSFN1} vs ${lSFN2}` : 'SF Winner'}</div>
+        </div>
+        <div class="b-final-split-divider"></div>
+        <div class="b-final-sf-side">
+          <div class="b-final-sf-logos">
+            ${teamLogo(rSFId1, 52)}${teamLogo(rSFId2, 52)}
+          </div>
+          <div class="b-final-sf-label">${rSFN1 && rSFN2 ? `${rSFN1} vs ${rSFN2}` : 'SF Winner'}</div>
+        </div>
+      </div>`;
+
+  const finalHTML = `<div class="b-final-col">
+    <div class="b-final-trophy">🏆</div>
+    <div class="b-final-title">The Final</div>
+    <div class="b-final-card${finalSt.live?' live':''}" ${finalEvtId ? `onclick="openMatch('${finalEvtId}')"` : 'style="cursor:default"'}>
+      ${finalistInner}
+      ${finalDate ? `<div class="b-final-meta" style="margin-top:8px">${fmtDate(finalDate)} &middot; ${fmtTime(finalDate)}</div>` : ''}
       ${finalVenueStr ? `<div class="b-final-meta">📍 ${finalVenueStr}</div>` : ''}
       ${champ ? `<div class="b-final-champ"><div class="b-final-champ-label">🏆 Champion</div><div class="b-final-champ-name">${champ}</div></div>` : ''}
     </div>
