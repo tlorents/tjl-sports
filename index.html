@@ -107,11 +107,33 @@
   .loser .b-name { color: var(--muted); }
 
   /* final column center */
-  .b-final-col { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0 8px; min-width: 120px; }
+  .b-final-col { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0 6px; min-width: 200px; }
   .b-final-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); margin-bottom: 6px; }
   .b-trophy { font-size: 28px; margin-bottom: 6px; }
   .b-champion-name { font-size: 13px; font-weight: 700; color: var(--accent); text-align: center; }
   .b-champion-flag { font-size: 24px; }
+
+  /* splashy final card */
+  .b-final-card { background: var(--card); border: 2px solid #f59e0b; border-radius: 14px; box-shadow: 0 0 20px rgba(245,158,11,.25), 0 4px 12px rgba(0,0,0,.12); padding: 16px 14px 12px; text-align: center; width: 196px; cursor: pointer; transition: box-shadow .2s; }
+  .b-final-card:hover { box-shadow: 0 0 28px rgba(245,158,11,.4), 0 6px 18px rgba(0,0,0,.16); }
+  .b-final-card.live { border-color: var(--live); box-shadow: 0 0 20px rgba(16,185,129,.3), 0 4px 12px rgba(0,0,0,.12); }
+  .b-final-trophy { font-size: 34px; line-height: 1; margin-bottom: 4px; }
+  .b-final-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #f59e0b; margin-bottom: 12px; }
+  .b-final-matchup { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; }
+  .b-final-team { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+  .b-final-team-flag { line-height: 1; }
+  .b-final-team-name { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 72px; }
+  .b-final-team-name.tbd { color: var(--muted); font-style: italic; font-weight: 400; }
+  .b-final-vs { font-size: 14px; font-weight: 900; color: var(--muted); flex-shrink: 0; }
+  .b-final-score-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px; font-size: 28px; font-weight: 900; line-height: 1; }
+  .b-final-score-sep { font-size: 16px; color: var(--muted); }
+  .b-final-meta { font-size: 10px; color: var(--muted); line-height: 1.5; }
+  .b-final-champ { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .b-final-champ-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 2px; }
+  .b-final-champ-name { font-size: 14px; font-weight: 800; color: #f59e0b; }
+  .b-final-logo { width: 72px; height: 72px; object-fit: contain; }
+  .b-final-logo-placeholder { width: 72px; height: 72px; border-radius: 8px; background: var(--border); }
+  .b-final-score { font-size: 24px; font-weight: 900; line-height: 1; margin-top: 2px; }
 
   /* ── GROUPS ── */
   .groups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(255px, 1fr)); gap: 12px; }
@@ -809,17 +831,41 @@ function renderBracket(el) {
   const finalN1 = fh?.team?.displayName || finalTeam1;
   const finalN2 = fa?.team?.displayName || finalTeam2;
 
+  // Final event details
+  const finalId1 = fh?.team?.id || findEvent(lSF[0]?.[0], lSF[0]?.[1], ['semifinals'])?.competitions?.[0]?.competitors?.find(c=>c.team?.abbreviation===winnerAbbr(findEvent(lSF[0]?.[0], lSF[0]?.[1], ['semifinals'])))?.team?.id || null;
+  const finalId2 = fa?.team?.id || findEvent(rSF[0]?.[0], rSF[0]?.[1], ['semifinals'])?.competitions?.[0]?.competitors?.find(c=>c.team?.abbreviation===winnerAbbr(findEvent(rSF[0]?.[0], rSF[0]?.[1], ['semifinals'])))?.team?.id || null;
+  const finalShowScore = finalSt.live || finalSt.done;
+  const finalDate = finalEvt?.competitions?.[0]?.date || finalEvt?.date;
+  const finalVenue = finalEvt?.competitions?.[0]?.venue;
+  const finalVenueStr = [finalVenue?.address?.city, finalVenue?.address?.state].filter(Boolean).join(', ');
+  const finalEvtId = finalEvt?.id || '';
+
+  function teamLogo(teamId) {
+    if (!teamId) return `<div class="b-final-logo-placeholder"></div>`;
+    return `<img class="b-final-logo" src="https://a.espncdn.com/i/teamlogos/soccer/500/${teamId}.png" onerror="this.style.display='none'" alt="">`;
+  }
+
   const finalHTML = `<div class="b-final-col">
-    <div class="b-trophy">🏆</div>
-    <div class="b-final-label">Final</div>
-    ${(finalN1 || finalN2)
-      ? bMatchHTML(finalN1 || null, finalN2 || null, 'final')
-      : `<div class="b-match b-tbd" style="cursor:default;min-width:110px">
-          <div class="b-team b-tbd"><div class="b-team-info"><span class="b-flag">${flag(null)}</span><span class="b-name">TBD</span></div></div>
-          <div class="b-team b-tbd"><div class="b-team-info"><span class="b-flag">${flag(null)}</span><span class="b-name">TBD</span></div></div>
-        </div>`
-    }
-    ${champ ? `<div style="margin-top:10px;text-align:center"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Champion</div><div class="b-champion-name">${champ}</div></div>` : ''}
+    <div class="b-final-trophy">🏆</div>
+    <div class="b-final-title">The Final</div>
+    <div class="b-final-card${finalSt.live?' live':''}" ${finalEvtId ? `onclick="openMatch('${finalEvtId}')"` : 'style="cursor:default"'}>
+      <div class="b-final-matchup">
+        <div class="b-final-team">
+          ${teamLogo(finalId1)}
+          <div class="b-final-team-name${!finalN1?' tbd':''}">${finalN1 || 'TBD'}</div>
+          ${finalShowScore ? `<div class="b-final-score">${fh?.score ?? '-'}</div>` : ''}
+        </div>
+        <div class="b-final-vs">${finalShowScore ? '' : 'vs'}</div>
+        <div class="b-final-team">
+          ${teamLogo(finalId2)}
+          <div class="b-final-team-name${!finalN2?' tbd':''}">${finalN2 || 'TBD'}</div>
+          ${finalShowScore ? `<div class="b-final-score">${fa?.score ?? '-'}</div>` : ''}
+        </div>
+      </div>
+      ${finalDate ? `<div class="b-final-meta">${fmtDate(finalDate)} &middot; ${fmtTime(finalDate)}</div>` : ''}
+      ${finalVenueStr ? `<div class="b-final-meta">📍 ${finalVenueStr}</div>` : ''}
+      ${champ ? `<div class="b-final-champ"><div class="b-final-champ-label">🏆 Champion</div><div class="b-final-champ-name">${champ}</div></div>` : ''}
+    </div>
   </div>`;
 
   const html = `<div class="bracket-wrap"><div class="bracket" style="min-height:620px;min-width:1500px">
