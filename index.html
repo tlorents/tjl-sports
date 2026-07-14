@@ -114,7 +114,7 @@
   .b-champion-flag { font-size: 24px; }
 
   /* splashy final card */
-  .b-final-card { background: var(--card); border: 2px solid #f59e0b; border-radius: 14px; box-shadow: 0 0 20px rgba(245,158,11,.25), 0 4px 12px rgba(0,0,0,.12); padding: 16px 14px 12px; text-align: center; width: 196px; cursor: pointer; transition: box-shadow .2s; }
+  .b-final-card { background: var(--card); border: 2px solid #f59e0b; border-radius: 14px; box-shadow: 0 0 20px rgba(245,158,11,.25), 0 4px 12px rgba(0,0,0,.12); padding: 16px 14px 12px; text-align: center; width: 240px; cursor: pointer; transition: box-shadow .2s; }
   .b-final-card:hover { box-shadow: 0 0 28px rgba(245,158,11,.4), 0 6px 18px rgba(0,0,0,.16); }
   .b-final-card.live { border-color: var(--live); box-shadow: 0 0 20px rgba(16,185,129,.3), 0 4px 12px rgba(0,0,0,.12); }
   .b-final-trophy { font-size: 34px; line-height: 1; margin-bottom: 4px; }
@@ -842,16 +842,21 @@ function renderBracket(el) {
   const finalVenueStr = [finalVenue?.address?.city, finalVenue?.address?.state].filter(Boolean).join(', ');
   const finalEvtId = finalEvt?.id || '';
 
-  // Pull team IDs — from final event if available, else from SF events
-  const lSFEvt = findEvent(lSF[0]?.[0], lSF[0]?.[1], ['semifinals']);
-  const rSFEvt = findEvent(rSF[0]?.[0], rSF[0]?.[1], ['semifinals']);
+  // Pull team IDs from SF events only — never trust the final's placeholder competitors
+  const getId = c => c?.team?.id;
+  const lSFEvt = (byRound['semifinals'] || []).find(e => {
+    const comps = e.competitions?.[0]?.competitors || [];
+    return comps.some(c => normName(c.team?.displayName||'').includes(normName(lSF[0]?.[0]||'x'))) ||
+           comps.some(c => normName(c.team?.displayName||'').includes(normName(lSF[0]?.[1]||'x')));
+  });
+  const rSFEvt = (byRound['semifinals'] || []).find(e => e !== lSFEvt);
   const lSFComps = lSFEvt?.competitions?.[0]?.competitors || [];
   const rSFComps = rSFEvt?.competitions?.[0]?.competitors || [];
   const lSFWinAbbr = winnerAbbr(lSFEvt);
   const rSFWinAbbr = winnerAbbr(rSFEvt);
-  const getId = c => c?.team?.id;
-  const finalId1 = fh?.team?.id || (lSFWinAbbr ? getId(lSFComps.find(c=>c.team?.abbreviation===lSFWinAbbr)) : null);
-  const finalId2 = fa?.team?.id || (rSFWinAbbr ? getId(rSFComps.find(c=>c.team?.abbreviation===rSFWinAbbr)) : null);
+  // Winner IDs (null until SF is complete)
+  const finalId1 = lSFWinAbbr ? getId(lSFComps.find(c=>c.team?.abbreviation===lSFWinAbbr)) : null;
+  const finalId2 = rSFWinAbbr ? getId(rSFComps.find(c=>c.team?.abbreviation===rSFWinAbbr)) : null;
   // SF team IDs for TBD split view (all 4 teams)
   const lSFId1 = getId(lSFComps[0]), lSFId2 = getId(lSFComps[1]);
   const rSFId1 = getId(rSFComps[0]), rSFId2 = getId(rSFComps[1]);
@@ -867,7 +872,7 @@ function renderBracket(el) {
 
   // Two finalist logos known → big side-by-side crests
   // TBD → split card showing both SF matchups (2x2 mini crests)
-  const knownFinalists = finalId1 && finalId2;
+  const knownFinalists = !!(finalId1 && finalId2 && lSFWinAbbr && rSFWinAbbr);
   const finalistInner = knownFinalists
     ? `<div class="b-final-matchup">
         <div class="b-final-team">
