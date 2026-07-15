@@ -114,26 +114,29 @@
   .b-champion-flag { font-size: 24px; }
 
   /* splashy final card */
-  .b-final-card { background: var(--card); border: 2px solid #f59e0b; border-radius: 14px; box-shadow: 0 0 20px rgba(245,158,11,.25), 0 4px 12px rgba(0,0,0,.12); padding: 16px 14px 12px; text-align: center; width: 240px; cursor: pointer; transition: box-shadow .2s; }
-  .b-final-card:hover { box-shadow: 0 0 28px rgba(245,158,11,.4), 0 6px 18px rgba(0,0,0,.16); }
-  .b-final-card.live { border-color: var(--live); box-shadow: 0 0 20px rgba(16,185,129,.3), 0 4px 12px rgba(0,0,0,.12); }
+  .b-final-card { border: 2px solid #f59e0b; border-radius: 14px; box-shadow: 0 0 20px rgba(245,158,11,.3), 0 4px 14px rgba(0,0,0,.15); overflow: hidden; width: 260px; cursor: pointer; transition: box-shadow .2s; background: #111; }
+  .b-final-card:hover { box-shadow: 0 0 32px rgba(245,158,11,.5), 0 6px 20px rgba(0,0,0,.2); }
+  .b-final-card.live { border-color: var(--live); box-shadow: 0 0 20px rgba(16,185,129,.35), 0 4px 14px rgba(0,0,0,.15); }
   .b-final-trophy { font-size: 34px; line-height: 1; margin-bottom: 4px; }
-  .b-final-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #f59e0b; margin-bottom: 12px; }
-  .b-final-matchup { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; }
-  .b-final-team { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
-  .b-final-team-flag { line-height: 1; }
-  .b-final-team-name { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 72px; }
-  .b-final-team-name.tbd { color: var(--muted); font-style: italic; font-weight: 400; }
-  .b-final-vs { font-size: 14px; font-weight: 900; color: var(--muted); flex-shrink: 0; }
-  .b-final-score-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px; font-size: 28px; font-weight: 900; line-height: 1; }
-  .b-final-score-sep { font-size: 16px; color: var(--muted); }
-  .b-final-meta { font-size: 10px; color: var(--muted); line-height: 1.5; }
-  .b-final-champ { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
-  .b-final-champ-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 2px; }
-  .b-final-champ-name { font-size: 14px; font-weight: 800; color: #f59e0b; }
-  .b-final-score { font-size: 24px; font-weight: 900; line-height: 1; margin-top: 2px; }
-  /* TBD split view */
-  .b-final-split { display: flex; align-items: stretch; gap: 0; width: 100%; }
+  .b-final-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #f59e0b; margin-bottom: 10px; }
+  /* photo split */
+  .b-final-photo-row { display: flex; height: 160px; }
+  .b-final-photo-half { flex: 1; position: relative; overflow: hidden; }
+  .b-final-photo-half img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+  .b-final-photo-half .b-final-ph-placeholder { width: 100%; height: 100%; background: #2a2a2a; display: flex; align-items: center; justify-content: center; color: #555; font-size: 11px; font-style: italic; }
+  .b-final-photo-label { position: absolute; bottom: 0; left: 0; right: 0; padding: 22px 6px 6px; background: linear-gradient(to top, rgba(0,0,0,.85) 0%, transparent 100%); color: #fff; font-size: 11px; font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: .5px; }
+  .b-final-photo-label.tbd { color: #888; font-weight: 400; font-style: italic; text-transform: none; letter-spacing: 0; }
+  .b-final-photo-divider { width: 2px; background: #f59e0b; flex-shrink: 0; }
+  .b-final-score-overlay { display: flex; align-items: center; justify-content: center; gap: 10px; background: rgba(0,0,0,.82); padding: 6px 0; }
+  .b-final-score-num { font-size: 26px; font-weight: 900; color: #fff; line-height: 1; }
+  .b-final-score-sep { font-size: 14px; color: #888; }
+  .b-final-meta-bar { padding: 7px 10px 8px; text-align: center; background: #111; }
+  .b-final-meta { font-size: 10px; color: #aaa; line-height: 1.55; }
+  .b-final-champ-bar { padding: 7px 10px; background: rgba(245,158,11,.12); border-top: 1px solid rgba(245,158,11,.3); text-align: center; }
+  .b-final-champ-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #f59e0b; margin-bottom: 1px; }
+  .b-final-champ-name { font-size: 13px; font-weight: 800; color: #f59e0b; }
+  /* TBD split view (pre-finalists known) */
+  .b-final-split { display: flex; align-items: stretch; }
   .b-final-sf-side { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 6px; }
   .b-final-sf-logos { display: flex; gap: 4px; align-items: center; justify-content: center; }
   .b-final-sf-label { font-size: 9px; color: var(--muted); text-align: center; line-height: 1.3; font-weight: 500; }
@@ -865,52 +868,44 @@ function renderBracket(el) {
   const rSFN1 = rSFComps[0]?.team?.shortDisplayName || rSFComps[0]?.team?.displayName || '';
   const rSFN2 = rSFComps[1]?.team?.shortDisplayName || rSFComps[1]?.team?.displayName || '';
 
-  function teamLogo(teamId, size=72) {
-    if (!teamId) return `<div style="width:${size}px;height:${size}px;border-radius:8px;background:var(--border)"></div>`;
-    return `<img style="width:${size}px;height:${size}px;object-fit:contain" src="https://a.espncdn.com/i/teamlogos/soccer/500/${teamId}.png" onerror="this.style.display='none'" alt="">`;
+  // Map team display names to local player photos
+  const playerImgs = { 'Spain': 'spainplayer.png', 'Argentina': 'argentinaplayer.png', 'England': 'englandplayer.png' };
+  function photoHalf(teamName, isTbd) {
+    const src = teamName ? playerImgs[teamName] : null;
+    const inner = src
+      ? `<img src="${src}" onerror="this.parentElement.innerHTML='<div class=\\'b-final-ph-placeholder\\'>${teamName||''}</div>'" alt="${teamName}">`
+      : `<div class="b-final-ph-placeholder">${isTbd ? 'TBD' : ''}</div>`;
+    const label = teamName
+      ? `<div class="b-final-photo-label">${teamName}</div>`
+      : `<div class="b-final-photo-label tbd">Winner TBD</div>`;
+    return `<div class="b-final-photo-half">${inner}${label}</div>`;
   }
 
-  // Two finalist logos known → big side-by-side crests
-  // TBD → split card showing both SF matchups (2x2 mini crests)
-  const knownFinalists = !!(finalId1 && finalId2 && lSFWinAbbr && rSFWinAbbr);
-  const finalistInner = knownFinalists
-    ? `<div class="b-final-matchup">
-        <div class="b-final-team">
-          ${teamLogo(finalId1)}
-          <div class="b-final-team-name">${finalN1 || ''}</div>
-          ${finalShowScore ? `<div class="b-final-score">${fh?.score ?? '-'}</div>` : ''}
-        </div>
-        <div class="b-final-vs">${finalShowScore ? '' : 'vs'}</div>
-        <div class="b-final-team">
-          ${teamLogo(finalId2)}
-          <div class="b-final-team-name">${finalN2 || ''}</div>
-          ${finalShowScore ? `<div class="b-final-score">${fa?.score ?? '-'}</div>` : ''}
-        </div>
-      </div>`
-    : `<div class="b-final-split">
-        <div class="b-final-sf-side">
-          <div class="b-final-sf-logos">
-            ${teamLogo(lSFId1, 52)}${teamLogo(lSFId2, 52)}
-          </div>
-          <div class="b-final-sf-label">${lSFN1 && lSFN2 ? `${lSFN1} vs ${lSFN2}` : 'SF Winner'}</div>
-        </div>
-        <div class="b-final-split-divider"></div>
-        <div class="b-final-sf-side">
-          <div class="b-final-sf-logos">
-            ${teamLogo(rSFId1, 52)}${teamLogo(rSFId2, 52)}
-          </div>
-          <div class="b-final-sf-label">${rSFN1 && rSFN2 ? `${rSFN1} vs ${rSFN2}` : 'SF Winner'}</div>
-        </div>
-      </div>`;
+  // Determine left/right finalist names (Spain confirmed; right side TBD until tonight)
+  const leftName  = finalTeam1 || (lSFWinAbbr  ? (lSFComps.find(c=>c.team?.abbreviation===lSFWinAbbr)?.team?.displayName  || null) : null);
+  const rightName = finalTeam2 || (rSFWinAbbr ? (rSFComps.find(c=>c.team?.abbreviation===rSFWinAbbr)?.team?.displayName || null) : null);
 
   const finalHTML = `<div class="b-final-col">
     <div class="b-final-trophy">🏆</div>
     <div class="b-final-title">The Final</div>
     <div class="b-final-card${finalSt.live?' live':''}" ${finalEvtId ? `onclick="openMatch('${finalEvtId}')"` : 'style="cursor:default"'}>
-      ${finalistInner}
-      ${finalDate ? `<div class="b-final-meta" style="margin-top:8px">${fmtDate(finalDate)} &middot; ${fmtTime(finalDate)}</div>` : ''}
-      ${finalVenueStr ? `<div class="b-final-meta">📍 ${finalVenueStr}</div>` : ''}
-      ${champ ? `<div class="b-final-champ"><div class="b-final-champ-label">🏆 Champion</div><div class="b-final-champ-name">${champ}</div></div>` : ''}
+      <div class="b-final-photo-row">
+        ${photoHalf(leftName,  !leftName)}
+        <div class="b-final-photo-divider"></div>
+        ${photoHalf(rightName, !rightName)}
+      </div>
+      ${finalShowScore
+        ? `<div class="b-final-score-overlay">
+             <span class="b-final-score-num">${fh?.score ?? '-'}</span>
+             <span class="b-final-score-sep">-</span>
+             <span class="b-final-score-num">${fa?.score ?? '-'}</span>
+           </div>`
+        : ''}
+      <div class="b-final-meta-bar">
+        ${finalDate ? `<div class="b-final-meta">${fmtDate(finalDate)} &middot; ${fmtTime(finalDate)}</div>` : ''}
+        ${finalVenueStr ? `<div class="b-final-meta">📍 ${finalVenueStr}</div>` : ''}
+      </div>
+      ${champ ? `<div class="b-final-champ-bar"><div class="b-final-champ-label">🏆 World Champion</div><div class="b-final-champ-name">${champ}</div></div>` : ''}
     </div>
   </div>`;
 
